@@ -1,0 +1,21 @@
+{
+  "name": "develop_node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.17.2",
+    "cookie-parser": "^1.4.3",
+    "cookie-session": "^2.0.0-beta.2",
+    "crypto": "0.0.3",
+    "express": "^4.15.3",
+    "multer": "^1.3.0",
+    "mysql": "^2.13.0"
+  }
+}
