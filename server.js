@@ -60,10 +60,20 @@ server.use('/login', (req, res, next) => {
     })
 })
 
+//退出
+server.use('/logout', (req, res, next) => {
+    console.log(22);
+    if (req.session['sid']) {
+        const session = req.session
+        delete session.sid
+        res.status(200).send({ ret_code: "000", ret_msg: "退出成功" }).end()
+    } else {
+        res.status(200).send({ ret_code: "-1", ret_msg: "未登录，无需退出" }).end()
+    }
+})
+
 //接口路由
 server.use('/api', require(__dirname + '/router/api.js')());
-
-
 server.use(express.static(__dirname + '/www'));
 
 server.listen(8090);

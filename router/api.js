@@ -41,7 +41,7 @@ module.exports = function () {
         if (userId >= 0) {
             // 通过用户ID获取文章列表
             userId = userId - userIdPerfix
-            db.query('SELECT * FROM `article_list` WHERE userId=' + userId + ' order by id desc limit 0,10', (err, data) => {
+            db.query('SELECT * FROM `article_list` WHERE userId=' + userId + ' order by id desc', (err, data) => {
                 if (err) {
                     res.status(500).send('数据库访问错误' + err)
                 } else {
@@ -57,7 +57,7 @@ module.exports = function () {
             })
         } else if (columnId && columnId >= 0) {
             // 选择栏目获取文章列表
-            db.query('SELECT * FROM `article_list` WHERE columnId=' + columnId + ' order by id desc limit 0,10', (err, data) => {
+            db.query('SELECT * FROM `article_list` WHERE columnId=' + columnId + ' order by id', (err, data) => {
                 if (err) {
                     res.status(500).send('数据库访问错误' + err)
                 } else {
@@ -72,7 +72,7 @@ module.exports = function () {
                 }
             })
         } else {
-            db.query('SELECT * FROM `article_list` WHERE userId=1 order by id desc limit 0,10', (err, data) => {
+            db.query('SELECT * FROM `article_list` WHERE userId=1 order by id desc', (err, data) => {
                 if (err) {
                     res.status(500).send('数据库访问错误' + err)
                 } else {
@@ -94,7 +94,7 @@ module.exports = function () {
         let userId = req.query.userId || -1
         if (userId >= 0) {
             userId = userId - userIdPerfix
-            db.query('SELECT * FROM `article_categories` WHERE userId=' + userId, (err, data) => {
+            db.query('SELECT * FROM `article_categories` WHERE userId=' + userId + ' order by id desc limit 0,5', (err, data) => {
                 if (err) {
                     res.status(500).send('数据库访问错误' + err)
                 } else {
@@ -106,7 +106,7 @@ module.exports = function () {
                 }
             })
         } else {
-            db.query('SELECT * FROM `article_categories` WHERE userId=1', (err, data) => {
+            db.query('SELECT * FROM `article_categories` WHERE userId=1 order by id desc limit 0,5', (err, data) => {
                 if (err) {
                     res.status(500).send('数据库访问错误' + err)
                 } else {
@@ -124,6 +124,7 @@ module.exports = function () {
     // 获取文章详情
     router.use('/articleDetail', (req, res, next) => {
         const articleId = req.query.articleId - prefix;
+        console.log(articleId);
         db.query('SELECT * FROM `article_list` WHERE ID=' + articleId, (err, data) => {
             if (err) {
                 res.status(500).send('数据库访问错误' + err)
