@@ -18,6 +18,7 @@ server.use(cookieSession({
     name: 'sess_id',	/*cookie中显示这个名字*/
     keys: keys,
     maxAge: 20 * 60 * 1000,
+    httpOnly: false,    /* 允许前端获取，用来判断是否过期 */
 }))
 
 const db = mysql.createPool({
@@ -62,10 +63,8 @@ server.use('/login', (req, res, next) => {
 
 //退出
 server.use('/logout', (req, res, next) => {
-    console.log(22);
     if (req.session['sid']) {
-        const session = req.session
-        delete session.sid
+        req.session = null
         res.status(200).send({ ret_code: "000", ret_msg: "退出成功" }).end()
     } else {
         res.status(200).send({ ret_code: "-1", ret_msg: "未登录，无需退出" }).end()
