@@ -57,7 +57,7 @@ module.exports = function () {
             })
         } else if (columnId && columnId >= 0) {
             // 选择栏目获取文章列表
-            db.query('SELECT * FROM `article_list` WHERE columnId=' + columnId + ' order by id', (err, data) => {
+            db.query('SELECT * FROM `article_list` WHERE columnId=' + columnId + ' order by id desc', (err, data) => {
                 if (err) {
                     res.status(500).send('数据库访问错误' + err)
                 } else {
@@ -118,13 +118,42 @@ module.exports = function () {
                 }
             })
         }
-
     });
+
+    // 获取所有标签
+    router.use('/tags', (req, res, next) => {
+        let userId = req.query.userId || -1
+        if (userId >= 0) {
+            userId = userId - userIdPerfix
+            db.query('SELECT * FROM `article_tags` WHERE userId=' + userId + ' order by id desc', (err, data) => {
+                if (err) {
+                    res.status(500).send('数据库访问错误' + err)
+                } else {
+                    data.forEach(function (item) {
+                        delete item.userId
+                    }, this);
+                    var rs = { list: data };
+                    res.send(rs)
+                }
+            })
+        } else {
+            db.query('SELECT * FROM `article_tags` WHERE userId=1 order by id desc', (err, data) => {
+                if (err) {
+                    res.status(500).send('数据库访问错误' + err)
+                } else {
+                    data.forEach(function (item) {
+                        delete item.userId
+                    }, this);
+                    var rs = { list: data };
+                    res.send(rs)
+                }
+            })
+        }
+    })
 
     // 获取文章详情
     router.use('/articleDetail', (req, res, next) => {
         const articleId = req.query.articleId - prefix;
-        console.log(articleId);
         db.query('SELECT * FROM `article_list` WHERE ID=' + articleId, (err, data) => {
             if (err) {
                 res.status(500).send('数据库访问错误' + err)
