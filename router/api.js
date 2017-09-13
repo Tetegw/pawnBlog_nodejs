@@ -201,15 +201,43 @@ module.exports = function () {
                     res.send({
                         code: -1,
                         message: '文章不存在'
-                    })
+                    }).end()
                 } else {
                     var rs = data[0];
-                    delete rs.userId
-                    res.send(rs)
+                    db.query('SELECT * FROM `user_list` WHERE ID=' + rs.userId, (err, data) => {
+                        if (err) {
+                            res.status(500).send('数据库访问错误' + err)
+                        } else {
+                            if (!data.length) {
+                                res.send({
+                                    code: -1,
+                                    message: '用户不存在'
+                                }).end()
+                            } else {
+                                var author = data[0].showName
+                                rs.author = author
+                                delete rs.userId
+                                res.send(rs)
+                            }
+                        }
+                    })
+
                 }
             }
         })
     });
 
+    // 保存文章
+    router.use('/saveArticle', (req, res, next) => {
+        var content = JSON.stringify(req.body.content)
+        console.log(content);
+        db.query('update article_list set content=' + content + ' where ID=1', (err, data) => {
+            if (err) {
+                res.status(500).send('数据库访问错误' + err)
+            } else {
+                res.status(200).send('文章添加成功')
+            }
+        })
+    })
     return router;
 }
