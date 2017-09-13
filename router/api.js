@@ -230,7 +230,6 @@ module.exports = function () {
     // 保存文章
     router.use('/saveArticle', (req, res, next) => {
         var content = JSON.stringify(req.body.content)
-        console.log(content);
         db.query('update article_list set content=' + content + ' where ID=1', (err, data) => {
             if (err) {
                 res.status(500).send('数据库访问错误' + err)
