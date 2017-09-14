@@ -63,12 +63,32 @@ server.use('/login', (req, res, next) => {
 
 //退出
 server.use('/logout', (req, res, next) => {
+    console.log(req.session['sid']);
     if (req.session['sid']) {
         req.session = null
         res.status(200).send({ ret_code: "000", ret_msg: "退出成功" }).end()
     } else {
         res.status(200).send({ ret_code: "-1", ret_msg: "未登录，无需退出" }).end()
     }
+})
+
+//获取用户信息
+server.use('/initUserInfo', (req, res, next) => {
+    var sid = req.session['sid']
+    db.query(`SELECT * FROM user_list WHERE ID='${sid}'`, (err, data) => {
+        if (err) {
+            res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
+        } else {
+            if (data.length === 0) {
+                res.status(200).send({ ret_code: "002", ret_msg: "用户不存在" }).end()
+            } else {
+                delete data[0].ID
+                delete data[0].username
+                delete data[0].password
+                res.send(data[0]).end()
+            }
+        }
+    })
 })
 
 //接口路由
