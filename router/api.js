@@ -25,11 +25,21 @@ module.exports = function () {
                 } else {
                     if (!data.length) {
                         res.send({
-                            code: -1,
+                            code: "001",
                             message: '用户不存在'
-                        })
+                        }).end()
+                    } else {
+                        res.send({
+                            code: "000",
+                            message: '用户查询成功'
+                        }).end()
                     }
                 }
+            })
+        } else {
+            res.send({
+                code: "002",
+                message: '跳转至默认用户'
             })
         }
     });
