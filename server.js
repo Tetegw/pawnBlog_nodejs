@@ -115,7 +115,106 @@ server.use('/articleList', (req, res, next) => {
     })
 })
 
+server.use('/pushArticle', (req, res, next) => {
+    const sid = req.session['sid']
+    const articleInfo = req.body
+    console.log(articleInfo);
+    // 更新或添加分类
+    if (articleInfo.columnId > -1) {
+        // 如果存在column, 说明用户选择以前的，则更新
+        articleInfo.columnNum = +articleInfo.columnNum + 1
+        // update table1 set field1=value1 where 范围
+        db.query('UPDATE `article_categories` SET num=' + articleInfo.columnNum + ' WHERE ID=' + articleInfo.columnId, (err, data) => {
+            if (err) {
+                res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
+            } else {
+                console.log('分类更新完成');
+                intoTags()
+                getColumId()
+            }
+        })
+    } else {
+        // INSERT INTO `article_categories` (`userId`, `column`, `num`) VALUES ('1', '撒旦法', '1')
+        db.query('INSERT INTO `article_categories` (`userId`, `column`, `num`) VALUES (' + sid + ', "' + articleInfo.column + '", 1)', (err, data) => {
+            if (err) {
+                res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
+            } else {
+                console.log('分类添加完成');
+                intoTags()
+                getColumId()
+            }
+        })
+    }
+    // 添加标签
+    function intoTags() {
+        var tagsList = articleInfo.tags.split('，')
+        tagsList.forEach(function (item) {
+            // INSERT INTO `article_categories` (`userId`, `column`, `num`) VALUES ('1', '撒旦法', '1')
+            db.query('INSERT INTO `article_tags` (`userId`, `tag`) VALUES (' + sid + ', "' + item + '")', (err, data) => {
+                if (err) {
+                    res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
+                } else {
+                    console.log('标签添加完成');
+                }
+            })
+        }, this);
+    }
+    //获取分类ID
+    function getColumId() {
+        db.query('SELECT ID FROM article_categories WHERE `column`="' + articleInfo.column + '"', (err, data) => {
+            if (err) {
+                console.log('出错了');
+                res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
+            } else {
+                console.log('获取分类ID完成');
+                articleInfo.columnId = data[0].ID
+                selectAvatar()
+            }
+        })
+    }
+    // 查找头像
+    function selectAvatar() {
+        db.query(`SELECT avatar FROM user_list WHERE ID='${sid}'`, (err, data) => {
+            if (err) {
+                res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
+            } else {
+                articleInfo.avatar = data[0].avatar
+                articleInfo.date = new Date().Format("yyyy-MM-dd hh:mm");
+                // 添加文章了
+                console.log('头像查找成功');
+                pushArticle()
+            }
+        })
+    }
+    // 添加更新文章
+    function pushArticle() {
+        const sid = req.session['sid']
+        db.query('INSERT INTO `article_list` (`userId`,`avatar`,`mainTitle`,`tags`,`intro`,`date`,`column`,`columnId`,`content`,`render`,`original`) VALUES (' + sid + ',"' + articleInfo.avatar + '","' + articleInfo.mainTitle + '","' + articleInfo.tags + '","' + articleInfo.intro + '","' + articleInfo.date + '","' + articleInfo.column + '","' + articleInfo.columnId + '","' + articleInfo.contentRender + '","' + articleInfo.content + '","' + articleInfo.original + '")', (err, data) => {
+            if (err) {
+                res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
+            } else {
+                console.log('文章添加完成');
+            }
+        })
+    }
 
+    Date.prototype.Format = function (fmt) { //author: meizz 
+        var o = {
+            "M+": this.getMonth() + 1, //月份 
+            "d+": this.getDate(), //日 
+            "h+": this.getHours(), //小时 
+            "m+": this.getMinutes(), //分 
+            "s+": this.getSeconds(), //秒 
+            "q+": Math.floor((this.getMonth() + 3) / 3), //季度 
+            "S": this.getMilliseconds() //毫秒 
+        };
+        if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+        for (var k in o)
+            if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+        return fmt;
+    }
+
+})
 
 //接口路由
 server.use('/api', require(__dirname + '/router/api.js')());
