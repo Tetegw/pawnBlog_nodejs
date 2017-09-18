@@ -135,7 +135,7 @@ server.use('/pushArticle', (req, res, next) => {
         })
     } else {
         // INSERT INTO `article_categories` (`userId`, `column`, `num`) VALUES ('1', '撒旦法', '1')
-        db.query('INSERT INTO `article_categories` (`userId`, `column`, `num`) VALUES (' + sid + ', "' + articleInfo.column + '", 1)', (err, data) => {
+        db.query('INSERT INTO `article_categories` (`userId`, `col`, `num`) VALUES (' + sid + ', "' + articleInfo.col + '", 1)', (err, data) => {
             if (err) {
                 res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
             } else {
@@ -161,12 +161,13 @@ server.use('/pushArticle', (req, res, next) => {
     }
     //获取分类ID
     function getColumId() {
-        db.query('SELECT ID FROM article_categories WHERE `column`="' + articleInfo.column + '"', (err, data) => {
+        db.query('SELECT ID FROM article_categories WHERE `col`="' + articleInfo.col + '"', (err, data) => {
             if (err) {
                 console.log('出错了');
                 res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
             } else {
                 console.log('获取分类ID完成');
+                console.log(data[0]);
                 articleInfo.columnId = data[0].ID
                 selectAvatar()
             }
@@ -189,7 +190,9 @@ server.use('/pushArticle', (req, res, next) => {
     // 添加更新文章
     function pushArticle() {
         const sid = req.session['sid']
-        db.query('INSERT INTO `article_list` (`userId`,`avatar`,`mainTitle`,`tags`,`intro`,`date`,`column`,`columnId`,`content`,`render`,`original`) VALUES (' + sid + ',"' + articleInfo.avatar + '","' + articleInfo.mainTitle + '","' + articleInfo.tags + '","' + articleInfo.intro + '","' + articleInfo.date + '","' + articleInfo.column + '","' + articleInfo.columnId + '","' + articleInfo.contentRender + '","' + articleInfo.content + '","' + articleInfo.original + '")', (err, data) => {
+        console.log(articleInfo);
+        db.query(`INSERT INTO article_list (userId,avatar,mainTitle,tags,intro,date,col,columnId,content,render,original) VALUES ("${sid}" ,"${articleInfo.avatar}","${articleInfo.mainTitle}","${articleInfo.tags}","${articleInfo.intro}","${articleInfo.date}","${articleInfo.col}","${articleInfo.columnId}","${articleInfo.content}","${articleInfo.contentRender}","${articleInfo.original}")`, (err, data) => {
+
             if (err) {
                 res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
             } else {
@@ -198,7 +201,7 @@ server.use('/pushArticle', (req, res, next) => {
         })
     }
 
-    Date.prototype.Format = function (fmt) { //author: meizz 
+    Date.prototype.Format = function (fmt) {
         var o = {
             "M+": this.getMonth() + 1, //月份 
             "d+": this.getDate(), //日 
@@ -221,3 +224,5 @@ server.use('/api', require(__dirname + '/router/api.js')());
 server.use(express.static(__dirname + '/www'));
 
 server.listen(8090);
+
+

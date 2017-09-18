@@ -108,7 +108,7 @@ module.exports = function () {
         if (userId >= 0) {
             // 通过用户ID获取文章列表
             userId = userId - userIdPerfix
-            db.query("SELECT * FROM article_list WHERE userId=" + userId + " AND `mainTitle` LIKE '%" + keword + "%' OR `tags` LIKE '%" + keword + "%' OR `column` LIKE '%" + keword + "%' order by id desc", (err, data) => {
+            db.query("SELECT * FROM article_list WHERE userId=" + userId + " AND `mainTitle` LIKE '%" + keword + "%' OR `tags` LIKE '%" + keword + "%' OR `col` LIKE '%" + keword + "%' order by id desc", (err, data) => {
                 if (err) {
                     res.status(500).send('数据库访问错误' + err)
                 } else {
@@ -123,7 +123,7 @@ module.exports = function () {
                 }
             })
         } else {
-            db.query("SELECT * FROM article_list WHERE userId=1 AND `mainTitle` LIKE '%" + keword + "%' OR `tags` LIKE '%" + keword + "%' OR `column` LIKE '%" + keword + "%' order by id desc", (err, data) => {
+            db.query("SELECT * FROM article_list WHERE userId=1 AND `mainTitle` LIKE '%" + keword + "%' OR `tags` LIKE '%" + keword + "%' OR `col` LIKE '%" + keword + "%' order by id desc", (err, data) => {
                 if (err) {
                     res.status(500).send('数据库访问错误' + err)
                 } else {
