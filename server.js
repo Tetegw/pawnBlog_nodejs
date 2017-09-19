@@ -115,6 +115,45 @@ server.use('/articleList', (req, res, next) => {
     })
 })
 
+//获取登录用户文章
+server.use('/draftList', (req, res, next) => {
+    const prefix = 934817;
+    const userIdPerfix = 24500;
+    const sid = req.session['sid']
+    db.query(`SELECT * FROM article_list_draft WHERE userId='${sid}'`, (err, data) => {
+        if (err) {
+            res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
+        } else {
+            if (data.length === 0) {
+                res.status(200).send({ ret_code: "002", ret_msg: "暂无文章" }).end()
+            } else {
+                data.forEach(function (item) {
+                    var tags = item.tags.split('，');
+                    item.tags = tags;
+                    item.userId = userIdPerfix + item.userId
+                    item.ID = prefix + item.ID;
+                }, this);
+                res.send({ ret_code: "000", ret_msg: "文章获取成功", data: data }).end()
+            }
+        }
+    })
+})
+
+//获取登录用户分类,用于文章选择
+server.use('/cols', (req, res, next) => {
+    const sid = req.session['sid']
+    db.query(`SELECT * FROM article_categories WHERE userId=${sid}`, (err, data) => {
+        if (err) {
+            res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
+        } else {
+            data.forEach(function (item) {
+                delete item.userId
+            }, this);
+            res.status(200).send({ ret_code: "000", ret_msg: "获取成功", data: data }).end()
+        }
+    })
+})
+
 server.use('/pushArticle', (req, res, next) => {
     const sid = req.session['sid']
     const articleInfo = req.body
@@ -197,6 +236,7 @@ server.use('/pushArticle', (req, res, next) => {
                 res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
             } else {
                 console.log('文章添加完成');
+                res.status(200).send({ ret_code: "000", ret_msg: "发布成功" }).end()
             }
         })
     }
@@ -218,6 +258,8 @@ server.use('/pushArticle', (req, res, next) => {
     }
 
 })
+
+
 
 //接口路由
 server.use('/api', require(__dirname + '/router/api.js')());

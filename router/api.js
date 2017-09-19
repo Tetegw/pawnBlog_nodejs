@@ -44,8 +44,6 @@ module.exports = function () {
         }
     });
 
-
-
     // 获取文章列表
     router.use('/articleList', (req, res, next) => {
         let columnId = req.query.columnId
@@ -100,6 +98,7 @@ module.exports = function () {
             })
         }
     });
+
 
     // 获取搜索关键字文章列表
     router.use('/search', (req, res, next) => {
@@ -180,11 +179,17 @@ module.exports = function () {
                 if (err) {
                     res.status(500).send('数据库访问错误' + err)
                 } else {
+                    let result = []
+                    let hash = {}
                     data.forEach(function (item) {
                         delete item.userId
+                        if (!hash[item['tag']]) {
+                            result.push(item)
+                            hash[item['tag']] = 1
+                        }
                     }, this);
-                    var rs = { list: data };
-                    res.send(rs)
+                    var rs = { list: result };
+                    res.status(200).send(rs).end()
                 }
             })
         } else {
@@ -192,11 +197,17 @@ module.exports = function () {
                 if (err) {
                     res.status(500).send('数据库访问错误' + err)
                 } else {
+                    let result = []
+                    let hash = {}
                     data.forEach(function (item) {
                         delete item.userId
+                        if (!hash[item['tag']]) {
+                            result.push(item)
+                            hash[item['tag']] = 1
+                        }
                     }, this);
-                    var rs = { list: data };
-                    res.send(rs)
+                    var rs = { list: result };
+                    res.status(200).send(rs).end()
                 }
             })
         }
@@ -229,7 +240,7 @@ module.exports = function () {
                                 var author = data[0].showName
                                 rs.author = author
                                 delete rs.userId
-                                res.send(rs)
+                                res.status(200).send(rs).end()
                             }
                         }
                     })
@@ -239,16 +250,5 @@ module.exports = function () {
         })
     });
 
-    // 保存文章
-    router.use('/saveArticle', (req, res, next) => {
-        var content = JSON.stringify(req.body.content)
-        db.query('update article_list set content=' + content + ' where ID=1', (err, data) => {
-            if (err) {
-                res.status(500).send('数据库访问错误' + err)
-            } else {
-                res.status(200).send('文章添加成功')
-            }
-        })
-    })
     return router;
 }
