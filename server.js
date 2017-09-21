@@ -115,7 +115,7 @@ server.use('/articleList', (req, res, next) => {
     })
 })
 
-//获取登录用户文章
+//获取登录用户草稿箱文章
 server.use('/draftList', (req, res, next) => {
     const prefix = 934817;
     const userIdPerfix = 24500;
@@ -139,6 +139,31 @@ server.use('/draftList', (req, res, next) => {
     })
 })
 
+//获取草稿箱文章详细
+server.use('/draftDetail', (req, res, next) => {
+    const prefix = 934817;
+    const userIdPerfix = 24500;
+    const sid = req.session['sid']
+    const draftId = req.query.draftId - prefix;
+    if (!sid) {
+        return;
+    }
+    db.query(`SELECT * FROM article_list_draft WHERE ID='${draftId}'`, (err, data) => {
+        if (err) {
+            res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
+        } else {
+            if (data.length === 0) {
+                res.status(200).send({ ret_code: "002", ret_msg: "暂无文章" }).end()
+            } else {
+                var tags = data[0].tags.split('，');
+                data[0].tags = tags;
+                data[0].ID = prefix + data[0].ID;
+                res.send({ ret_code: "000", ret_msg: "文章获取成功", data: data[0] }).end()
+            }
+        }
+    })
+})
+
 //获取登录用户分类,用于文章选择
 server.use('/cols', (req, res, next) => {
     const sid = req.session['sid']
@@ -146,10 +171,14 @@ server.use('/cols', (req, res, next) => {
         if (err) {
             res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
         } else {
-            data.forEach(function (item) {
-                delete item.userId
-            }, this);
-            res.status(200).send({ ret_code: "000", ret_msg: "获取成功", data: data }).end()
+            if (data.length === 0) {
+                res.status(200).send({ ret_code: "002", ret_msg: "暂无标签" }).end()
+            } else {
+                data.forEach(function (item) {
+                    delete item.userId
+                }, this);
+                res.status(200).send({ ret_code: "000", ret_msg: "获取成功", data: data }).end()
+            }
         }
     })
 })
