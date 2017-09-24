@@ -96,7 +96,7 @@ server.use('/articleList', (req, res, next) => {
     const prefix = 934817;
     const userIdPerfix = 24500;
     const sid = req.session['sid']
-    db.query(`SELECT * FROM article_list WHERE userId='${sid}'`, (err, data) => {
+    db.query(`SELECT * FROM article_list WHERE userId='${sid}' order by id desc`, (err, data) => {
         if (err) {
             res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
         } else {
@@ -120,7 +120,7 @@ server.use('/draftList', (req, res, next) => {
     const prefix = 934817;
     const userIdPerfix = 24500;
     const sid = req.session['sid']
-    db.query(`SELECT * FROM article_list_draft WHERE userId='${sid}'`, (err, data) => {
+    db.query(`SELECT * FROM article_list_draft WHERE userId='${sid}' order by id desc`, (err, data) => {
         if (err) {
             res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
         } else {
@@ -158,6 +158,33 @@ server.use('/draftDetail', (req, res, next) => {
                 var tags = data[0].tags.split('，');
                 data[0].tags = tags;
                 data[0].ID = prefix + data[0].ID;
+                data[0].userId = userIdPerfix + data[0].userId
+                res.send({ ret_code: "000", ret_msg: "文章获取成功", data: data[0] }).end()
+            }
+        }
+    })
+})
+
+//获取发表的文章详细
+server.use('/articleDetail', (req, res, next) => {
+    const prefix = 934817;
+    const userIdPerfix = 24500;
+    const sid = req.session['sid']
+    const articleId = req.query.articleId - prefix;
+    if (!sid) {
+        return;
+    }
+    db.query(`SELECT * FROM article_list WHERE ID='${articleId}'`, (err, data) => {
+        if (err) {
+            res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
+        } else {
+            if (data.length === 0) {
+                res.status(200).send({ ret_code: "002", ret_msg: "暂无文章" }).end()
+            } else {
+                var tags = data[0].tags.split('，');
+                data[0].tags = tags;
+                data[0].ID = prefix + data[0].ID;
+                data[0].userId = userIdPerfix + data[0].userId
                 res.send({ ret_code: "000", ret_msg: "文章获取成功", data: data[0] }).end()
             }
         }
@@ -183,35 +210,26 @@ server.use('/cols', (req, res, next) => {
     })
 })
 
+// 发表文章
 server.use('/pushArticle', (req, res, next) => {
     const sid = req.session['sid']
     const articleInfo = req.body
-    console.log(articleInfo);
     // 更新或添加分类
-    if (articleInfo.columnId > -1) {
-        // 如果存在column, 说明用户选择以前的，则更新
-        articleInfo.columnNum = +articleInfo.columnNum + 1
-        // update table1 set field1=value1 where 范围
-        db.query('UPDATE `article_categories` SET num=' + articleInfo.columnNum + ' WHERE ID=' + articleInfo.columnId, (err, data) => {
+    if (articleInfo.columnId === "-1") {
+        console.log('object');
+        db.query('INSERT INTO `article_categories` (`userId`, `col`) VALUES (' + sid + ', "' + articleInfo.col + '")', (err, data) => {
             if (err) {
-                res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
-            } else {
-                console.log('分类更新完成');
-                intoTags()
-                getColumId()
-            }
-        })
-    } else {
-        // INSERT INTO `article_categories` (`userId`, `column`, `num`) VALUES ('1', '撒旦法', '1')
-        db.query('INSERT INTO `article_categories` (`userId`, `col`, `num`) VALUES (' + sid + ', "' + articleInfo.col + '", 1)', (err, data) => {
-            if (err) {
-                res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
+                res.status(500).send({ ret_code: "001", ret_msg: "添加分类错误" }).end()
             } else {
                 console.log('分类添加完成');
                 intoTags()
                 getColumId()
             }
         })
+    } else {
+        console.log('object2');
+        intoTags()
+        getColumId()
     }
     // 添加标签
     function intoTags() {
@@ -220,7 +238,7 @@ server.use('/pushArticle', (req, res, next) => {
             // INSERT INTO `article_categories` (`userId`, `column`, `num`) VALUES ('1', '撒旦法', '1')
             db.query('INSERT INTO `article_tags` (`userId`, `tag`) VALUES (' + sid + ', "' + item + '")', (err, data) => {
                 if (err) {
-                    res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
+                    res.status(500).send({ ret_code: "001", ret_msg: "添加标签错误" }).end()
                 } else {
                     console.log('标签添加完成');
                 }
@@ -232,7 +250,7 @@ server.use('/pushArticle', (req, res, next) => {
         db.query('SELECT ID FROM article_categories WHERE `col`="' + articleInfo.col + '"', (err, data) => {
             if (err) {
                 console.log('出错了');
-                res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
+                res.status(500).send({ ret_code: "001", ret_msg: "获取分类ID错误" }).end()
             } else {
                 console.log('获取分类ID完成');
                 console.log(data[0]);
@@ -245,11 +263,9 @@ server.use('/pushArticle', (req, res, next) => {
     function selectAvatar() {
         db.query(`SELECT avatar FROM user_list WHERE ID='${sid}'`, (err, data) => {
             if (err) {
-                res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
+                res.status(500).send({ ret_code: "001", ret_msg: "查找头像错误" }).end()
             } else {
                 articleInfo.avatar = data[0].avatar
-                articleInfo.date = new Date().Format("yyyy-MM-dd hh:mm");
-                // 添加文章了
                 console.log('头像查找成功');
                 pushArticle()
             }
@@ -257,17 +273,66 @@ server.use('/pushArticle', (req, res, next) => {
     }
     // 添加更新文章
     function pushArticle() {
+        const prefix = 934817;
         const sid = req.session['sid']
-        console.log(articleInfo);
-        db.query(`INSERT INTO article_list (userId,avatar,mainTitle,tags,intro,date,col,columnId,content,render,original) VALUES ("${sid}" ,"${articleInfo.avatar}","${articleInfo.mainTitle}","${articleInfo.tags}","${articleInfo.intro}","${articleInfo.date}","${articleInfo.col}","${articleInfo.columnId}","${articleInfo.content}","${articleInfo.contentRender}","${articleInfo.original}")`, (err, data) => {
-
-            if (err) {
-                res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
-            } else {
-                console.log('文章添加完成');
-                res.status(200).send({ ret_code: "000", ret_msg: "发布成功" }).end()
-            }
-        })
+        articleInfo.date = new Date().Format("yyyy-MM-dd hh:mm")
+        if (articleInfo.articleId === '0') {
+            // 新文章
+            console.log('准备添加文章');
+            db.query(`INSERT INTO article_list (userId,avatar,mainTitle,tags,intro,date,col,columnId,content,render,original) VALUES ("${sid}" ,"${articleInfo.avatar}","${articleInfo.mainTitle}","${articleInfo.tags}","${articleInfo.intro}","${articleInfo.date}","${articleInfo.col}","${articleInfo.columnId}","${articleInfo.content}","${articleInfo.contentRender}","${articleInfo.original}")`, (err, data) => {
+                if (err) {
+                    res.status(500).send({ ret_code: "001", ret_msg: "添加文章错误" }).end()
+                } else {
+                    if (articleInfo.draftId > 0) {
+                        articleInfo.draftId = articleInfo.draftId - prefix
+                        console.log(articleInfo.draftId);
+                        // 删除草稿箱文章
+                        // DELETE FROM Person WHERE LastName = 'Wilson' 
+                        db.query(`DELETE FROM article_list_draft WHERE ID="${articleInfo.draftId}"`, (err, data) => {
+                            if (err) {
+                                res.status(500).send({ ret_code: "001", ret_msg: "删除草稿箱错误" }).end()
+                            } else {
+                                console.log('添加文章完成');
+                                res.status(200).send({ ret_code: "000", ret_msg: "发布成功，删除草稿箱成功" }).end()
+                            }
+                        })
+                    } else {
+                        res.status(200).send({ ret_code: "000", ret_msg: "发布成功" }).end()
+                    }
+                }
+            })
+        } else {
+            // 从发布的文章来
+            console.log('准备更新文章');
+            articleInfo.articleId = articleInfo.articleId * 1 - prefix
+            console.log(sid, articleInfo.columnId, articleInfo.articleId);
+            // 更新文章
+            /// 'UPDATE `article_categories` SET num=' + articleInfo.columnNum + ' WHERE ID=' + articleInfo.columnId
+            db.query(`UPDATE article_list SET userId="${sid}",avatar="${articleInfo.avatar}",mainTitle="${articleInfo.mainTitle}",tags="${articleInfo.tags}",intro="${articleInfo.intro}",date="${articleInfo.date}",col="${articleInfo.col}",columnId="${articleInfo.columnId}",content="${articleInfo.content}",render="${articleInfo.contentRender}",original="${articleInfo.original}" WHERE ID="${articleInfo.articleId}"`, (err, data) => {
+                if (err) {
+                    console.log(err);
+                    res.status(500).send({ ret_code: "001", ret_msg: "更新文章错误" }).end()
+                } else {
+                    console.log('更新文章完成');
+                    if (articleInfo.draftId > 0) {
+                        articleInfo.draftId = articleInfo.draftId - prefix
+                        console.log(articleInfo.draftId);
+                        // 删除草稿箱文章
+                        // DELETE FROM Person WHERE LastName = 'Wilson' 
+                        db.query(`DELETE FROM article_list_draft WHERE ID="${articleInfo.draftId}"`, (err, data) => {
+                            if (err) {
+                                res.status(500).send({ ret_code: "001", ret_msg: "删除草稿箱错误" }).end()
+                            } else {
+                                console.log('添加文章完成');
+                                res.status(200).send({ ret_code: "000", ret_msg: "发布成功，删除草稿箱成功" }).end()
+                            }
+                        })
+                    } else {
+                        res.status(200).send({ ret_code: "000", ret_msg: "发布成功" }).end()
+                    }
+                }
+            })
+        }
     }
 
     Date.prototype.Format = function (fmt) {
@@ -288,7 +353,61 @@ server.use('/pushArticle', (req, res, next) => {
 
 })
 
+//保存草稿
+server.use('/pushDraft', (req, res, next) => {
+    const sid = req.session['sid']
+    const draftInfo = req.body
+    const prefix = 934817
+    function pushDraft() {
+        draftInfo.date = new Date().Format("yyyy-MM-dd hh:mm")
+        // 添加草稿
+        if (draftInfo.draftId === '0') {
+            // 从发布的文章来或者新草稿
+            console.log('准备添加草稿');
+            db.query(`INSERT INTO article_list_draft (userId,mainTitle,tags,intro,date,col,columnId,content,render,original,articleId) VALUES ("${sid}" ,"${draftInfo.mainTitle}","${draftInfo.tags}","${draftInfo.intro}","${draftInfo.date}","${draftInfo.col}","${draftInfo.columnId}","${draftInfo.content}","${draftInfo.contentRender}","${draftInfo.original}", "${draftInfo.articleId}")`, (err, data) => {
+                if (err) {
+                    res.status(500).send({ ret_code: "001", ret_msg: "保存草稿错误" }).end()
+                } else {
+                    res.status(200).send({ ret_code: "000", ret_msg: "保存草稿成功" }).end()
+                }
+            })
+        } else {
+            // 从草稿箱来
+            console.log('准备更新草稿');
+            draftInfo.draftId = draftInfo.draftId * 1 - prefix
+            console.log(sid, draftInfo.columnId, draftInfo.draftId);
+            // 更新草稿
+            /// 'UPDATE `article_categories` SET num=' + articleInfo.columnNum + ' WHERE ID=' + articleInfo.columnId
+            db.query(`UPDATE article_list_draft SET userId="${sid}",mainTitle="${draftInfo.mainTitle}",tags="${draftInfo.tags}",intro="${draftInfo.intro}",date="${draftInfo.date}",col="${draftInfo.col}",columnId="${draftInfo.columnId}",content="${draftInfo.content}",render="${draftInfo.contentRender}",original="${draftInfo.original}" WHERE ID="${draftInfo.draftId}"`, (err, data) => {
+                if (err) {
+                    console.log(err);
+                    res.status(500).send({ ret_code: "001", ret_msg: "更新草稿错误" }).end()
+                } else {
+                    console.log('更新草稿完成');
+                    res.status(200).send({ ret_code: "000", ret_msg: "保存草稿成功" }).end()
+                }
+            })
+        }
+    }
 
+
+    Date.prototype.Format = function (fmt) {
+        var o = {
+            "M+": this.getMonth() + 1, //月份 
+            "d+": this.getDate(), //日 
+            "h+": this.getHours(), //小时 
+            "m+": this.getMinutes(), //分 
+            "s+": this.getSeconds(), //秒 
+            "q+": Math.floor((this.getMonth() + 3) / 3), //季度 
+            "S": this.getMilliseconds() //毫秒 
+        };
+        if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+        for (var k in o)
+            if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+        return fmt;
+    }
+    pushDraft()
+})
 
 //接口路由
 server.use('/api', require(__dirname + '/router/api.js')());
