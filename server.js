@@ -6,6 +6,7 @@ const multer = require("multer"); /*上传post相关*/
 const mysql = require('mysql');
 const utils = require("./common/utils") /*工具集*/
 
+var objMulter = multer();
 var server = express();
 
 server.use(bodyParser.urlencoded({ extended: false }));
@@ -407,6 +408,13 @@ server.use('/pushDraft', (req, res, next) => {
         return fmt;
     }
     pushDraft()
+})
+
+//上传测试
+server.use(objMulter.any())
+server.post('/upload', (req, res, next) => {
+    const sid = req.session['sid']
+    console.log(req.files);
 })
 
 //接口路由
