@@ -7,13 +7,15 @@ const mysql = require('mysql');
 const utils = require("./common/utils") /*工具集*/
 const fs = require('fs')
 const pathLib = require('path')
+const url = require('url')
 
 
 var server = express();
 
 server.use(bodyParser.urlencoded({ extended: false }));
 server.use(cookieParser());
-var multerObj = multer({ dest: './www/upload/', limits: { fileSize: 2 * 1000 * 1000 } }).any()
+var multerArticle = multer({ dest: './www/upload/article', limits: { fileSize: 2 * 1000 * 1000 } }).any()
+var multerAvatar = multer({ dest: './www/upload/avatar', limits: { fileSize: 2 * 1000 * 1000 } }).any()
 
 
 var keys = [];
@@ -91,6 +93,7 @@ server.use('/initUserInfo', (req, res, next) => {
                 delete data[0].ID
                 delete data[0].username
                 delete data[0].password
+                delete data[0].activate
                 res.send({ ret_code: "000", ret_msg: "用户信息获取成功", data: data[0] }).end()
             }
         }
@@ -415,9 +418,9 @@ server.use('/pushDraft', (req, res, next) => {
     pushDraft()
 })
 
-//上传测试
-server.post('/upload', (req, res, next) => {
-    multerObj(req, res, function (err) {
+//上传文章图片
+server.post('/uploadArticle', (req, res, next) => {
+    multerArticle(req, res, function (err) {
         if (err) {
             var errObj = JSON.parse(JSON.stringify(err));
             if (errObj.code === 'LIMIT_FILE_SIZE') {
@@ -431,17 +434,69 @@ server.post('/upload', (req, res, next) => {
             var extNmae = pathLib.parse(originalName).ext
             var pathName = req.files[0].path
             var newName = pathName + extNmae;
+            var tempname = pathName.substring(3) + extNmae;
+            var resultName = url.resolve('http://localhost:8090', tempname);
             fs.rename(pathName, newName, function (err) {
                 if (err) {
                     res.status(500).send({ ret_code: "000", ret_msg: '上传失败' }).end()
                     console.log(err);
                 } else {
-                    res.status(200).send({ ret_code: "000", ret_msg: '上传成功', path: newName }).end()
+                    res.status(200).send({ ret_code: "000", ret_msg: '上传成功', path: resultName }).end()
                 }
             })
         }
     })
 })
+
+//上传头像
+server.post('/uploadAvatar', (req, res, next) => {
+    const sid = req.session['sid']
+    const userIdPerfix = 24500;
+    const userId = userIdPerfix + sid
+    multerAvatar(req, res, function (err) {
+        if (err) {
+            var errObj = JSON.parse(JSON.stringify(err));
+            if (errObj.code === 'LIMIT_FILE_SIZE') {
+                res.status(200).send({ ret_code: "001", ret_msg: "上传文件大小不允许超过2M" }).end()
+            } else {
+                res.status(200).send({ ret_code: "001", ret_msg: errObj.code }).end()
+            }
+        } else {
+            // 拼接文件名，返回给前端
+            var originalName = req.files[0].originalname
+            var extNmae = pathLib.parse(originalName).ext
+            var pathName = req.files[0].path
+            var newName = pathName + '_' + userId + extNmae;
+            var tempname = pathName.substring(3) + '_' + userId + extNmae;
+            var resultName = url.resolve('http://localhost:8090', tempname);
+            fs.rename(pathName, newName, function (err) {
+                if (err) {
+                    res.status(500).send({ ret_code: "000", ret_msg: '上传失败' }).end()
+                    console.log(err);
+                } else {
+                    res.status(200).send({ ret_code: "000", ret_msg: '上传成功', path: resultName }).end()
+                }
+            })
+        }
+    })
+})
+
+// 发表文章
+server.use('/updateSelfInfo', (req, res, next) => {
+    const sid = req.session['sid']
+    // 新文章
+    console.log('准备更新个人信息');
+    db.query(`UPDATE user_list SET showName="${req.body.showName}",singName="${req.body.shortInt}",avatar="${req.body.avatar}"  WHERE ID=${sid}`, (err, data) => {
+        if (err) {
+            console.log(err);
+            res.status(500).send({ ret_code: "001", ret_msg: "更新个人信息错误" }).end()
+        } else {
+            res.status(200).send({ ret_code: "000", ret_msg: "发布成功" }).end()
+        }
+    })
+})
+
+
 
 //接口路由
 server.use('/api', require(__dirname + '/router/api.js')());
