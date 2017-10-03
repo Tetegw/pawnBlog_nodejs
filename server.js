@@ -5,12 +5,17 @@ const cookieSession = require("cookie-session"); /*session相关*/
 const multer = require("multer"); /*上传post相关*/
 const mysql = require('mysql');
 const utils = require("./common/utils") /*工具集*/
+const fs = require('fs')
+const pathLib = require('path')
 
-var objMulter = multer();
+
 var server = express();
 
 server.use(bodyParser.urlencoded({ extended: false }));
 server.use(cookieParser());
+var multerObj = multer({ dest: './www/upload/', limits: { fileSize: 2 * 1000 * 1000 } }).any()
+
+
 var keys = [];
 for (var i = 0; i < 10000; i++) {
     keys.push('sc_' + Math.random());
@@ -411,10 +416,31 @@ server.use('/pushDraft', (req, res, next) => {
 })
 
 //上传测试
-server.use(objMulter.any())
 server.post('/upload', (req, res, next) => {
-    const sid = req.session['sid']
-    console.log(req.files);
+    multerObj(req, res, function (err) {
+        if (err) {
+            var errObj = JSON.parse(JSON.stringify(err));
+            if (errObj.code === 'LIMIT_FILE_SIZE') {
+                res.status(200).send({ ret_code: "001", ret_msg: "上传文件大小不允许超过2M" }).end()
+            } else {
+                res.status(200).send({ ret_code: "001", ret_msg: errObj.code }).end()
+            }
+        } else {
+            // 拼接文件名，返回给前端
+            var originalName = req.files[0].originalname
+            var extNmae = pathLib.parse(originalName).ext
+            var pathName = req.files[0].path
+            var newName = pathName + extNmae;
+            fs.rename(pathName, newName, function (err) {
+                if (err) {
+                    res.status(500).send({ ret_code: "000", ret_msg: '上传失败' }).end()
+                    console.log(err);
+                } else {
+                    res.status(200).send({ ret_code: "000", ret_msg: '上传成功', path: newName }).end()
+                }
+            })
+        }
+    })
 })
 
 //接口路由
