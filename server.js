@@ -231,28 +231,12 @@ server.use('/pushArticle', (req, res, next) => {
                 res.status(500).send({ ret_code: "001", ret_msg: "添加分类错误" }).end()
             } else {
                 console.log('分类添加完成');
-                intoTags()
                 getColumId()
             }
         })
     } else {
         console.log('object2');
-        intoTags()
         getColumId()
-    }
-    // 添加标签
-    function intoTags() {
-        var tagsList = articleInfo.tags.split('，')
-        tagsList.forEach(function (item) {
-            // INSERT INTO `article_categories` (`userId`, `column`, `num`) VALUES ('1', '撒旦法', '1')
-            db.query('INSERT INTO `article_tags` (`userId`, `tag`) VALUES (' + sid + ', "' + item + '")', (err, data) => {
-                if (err) {
-                    res.status(500).send({ ret_code: "001", ret_msg: "添加标签错误" }).end()
-                } else {
-                    console.log('标签添加完成');
-                }
-            })
-        }, this);
     }
     //获取分类ID
     function getColumId() {
@@ -268,18 +252,7 @@ server.use('/pushArticle', (req, res, next) => {
             }
         })
     }
-    /* // 查找头像
-    function selectAvatar() {
-        db.query(`SELECT avatar FROM user_list WHERE ID='${sid}'`, (err, data) => {
-            if (err) {
-                res.status(500).send({ ret_code: "001", ret_msg: "查找头像错误" }).end()
-            } else {
-                articleInfo.avatar = data[0].avatar
-                console.log('头像查找成功');
-                pushArticle()
-            }
-        })
-    } */
+
     // 添加更新文章
     function pushArticle() {
         const prefix = 934817;
