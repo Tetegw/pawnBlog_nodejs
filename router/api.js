@@ -238,7 +238,9 @@ module.exports = function () {
                                 }).end()
                             } else {
                                 var author = data[0].showName
+                                var avatar = data[0].avatar
                                 rs.author = author
+                                rs.avatar = avatar
                                 delete rs.userId
                                 res.status(200).send(rs).end()
                             }

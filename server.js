@@ -264,11 +264,11 @@ server.use('/pushArticle', (req, res, next) => {
                 console.log('获取分类ID完成');
                 console.log(data[0]);
                 articleInfo.columnId = data[0].ID
-                selectAvatar()
+                pushArticle()
             }
         })
     }
-    // 查找头像
+    /* // 查找头像
     function selectAvatar() {
         db.query(`SELECT avatar FROM user_list WHERE ID='${sid}'`, (err, data) => {
             if (err) {
@@ -279,7 +279,7 @@ server.use('/pushArticle', (req, res, next) => {
                 pushArticle()
             }
         })
-    }
+    } */
     // 添加更新文章
     function pushArticle() {
         const prefix = 934817;
@@ -288,7 +288,7 @@ server.use('/pushArticle', (req, res, next) => {
         if (articleInfo.articleId === '0') {
             // 新文章
             console.log('准备添加文章');
-            db.query(`INSERT INTO article_list (userId,avatar,mainTitle,tags,intro,date,col,columnId,content,render,original) VALUES ("${sid}" ,"${articleInfo.avatar}","${articleInfo.mainTitle}","${articleInfo.tags}","${articleInfo.intro}","${articleInfo.date}","${articleInfo.col}","${articleInfo.columnId}","${articleInfo.content}","${articleInfo.contentRender}","${articleInfo.original}")`, (err, data) => {
+            db.query(`INSERT INTO article_list (userId,mainTitle,tags,intro,date,col,columnId,content,render,original) VALUES ("${sid}" ,"${articleInfo.mainTitle}","${articleInfo.tags}","${articleInfo.intro}","${articleInfo.date}","${articleInfo.col}","${articleInfo.columnId}","${articleInfo.content}","${articleInfo.contentRender}","${articleInfo.original}")`, (err, data) => {
                 if (err) {
                     res.status(500).send({ ret_code: "001", ret_msg: "添加文章错误" }).end()
                 } else {
@@ -316,8 +316,7 @@ server.use('/pushArticle', (req, res, next) => {
             articleInfo.articleId = articleInfo.articleId * 1 - prefix
             console.log(sid, articleInfo.columnId, articleInfo.articleId);
             // 更新文章
-            /// 'UPDATE `article_categories` SET num=' + articleInfo.columnNum + ' WHERE ID=' + articleInfo.columnId
-            db.query(`UPDATE article_list SET userId="${sid}",avatar="${articleInfo.avatar}",mainTitle="${articleInfo.mainTitle}",tags="${articleInfo.tags}",intro="${articleInfo.intro}",date="${articleInfo.date}",col="${articleInfo.col}",columnId="${articleInfo.columnId}",content="${articleInfo.content}",render="${articleInfo.contentRender}",original="${articleInfo.original}" WHERE ID="${articleInfo.articleId}"`, (err, data) => {
+            db.query(`UPDATE article_list SET userId="${sid}",mainTitle="${articleInfo.mainTitle}",tags="${articleInfo.tags}",intro="${articleInfo.intro}",date="${articleInfo.date}",col="${articleInfo.col}",columnId="${articleInfo.columnId}",content="${articleInfo.content}",render="${articleInfo.contentRender}",original="${articleInfo.original}" WHERE ID="${articleInfo.articleId}"`, (err, data) => {
                 if (err) {
                     console.log(err);
                     res.status(500).send({ ret_code: "001", ret_msg: "更新文章错误" }).end()
@@ -448,6 +447,36 @@ server.post('/uploadArticle', (req, res, next) => {
     })
 })
 
+// 删除文章
+server.use('/deleteArticle', (req, res, next) => {
+    const prefix = 934817
+    let itemId = req.body.itemId * 1 - prefix
+    db.query(`DELETE FROM article_list WHERE ID=${itemId}`, (err, data) => {
+        if (err) {
+            console.log(err);
+            res.status(500).send({ ret_code: "001", ret_msg: "删除文章未成功，请稍后再试" }).end()
+        } else {
+            console.log('删除文章' + itemId);
+            res.status(200).send({ ret_code: "000", ret_msg: "删除文章成功" }).end()
+        }
+    })
+})
+
+// 删除草稿
+server.use('/deleteDraft', (req, res, next) => {
+    const prefix = 934817
+    let itemId = req.body.itemId * 1 - prefix
+    db.query(`DELETE FROM article_list_draft WHERE ID=${itemId}`, (err, data) => {
+        if (err) {
+            console.log(err);
+            res.status(500).send({ ret_code: "001", ret_msg: "删除草稿未成功，请稍后再试" }).end()
+        } else {
+            console.log('删除草稿' + itemId);
+            res.status(200).send({ ret_code: "000", ret_msg: "删除草稿成功" }).end()
+        }
+    })
+})
+
 //上传头像
 server.post('/uploadAvatar', (req, res, next) => {
     const sid = req.session['sid']
@@ -481,7 +510,7 @@ server.post('/uploadAvatar', (req, res, next) => {
     })
 })
 
-// 发表文章
+//更新个人信息
 server.use('/updateSelfInfo', (req, res, next) => {
     const sid = req.session['sid']
     // 新文章
@@ -495,7 +524,6 @@ server.use('/updateSelfInfo', (req, res, next) => {
         }
     })
 })
-
 
 
 //接口路由
