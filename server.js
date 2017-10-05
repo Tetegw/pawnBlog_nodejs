@@ -36,6 +36,7 @@ const db = mysql.createPool({
     database: 'blog_vue'
 });
 
+
 // web路由 验证登录
 server.use('/admin', (req, res, next) => {
     console.log(req.session)
@@ -49,7 +50,6 @@ server.use('/admin', (req, res, next) => {
 server.use('/login', (req, res, next) => {
     var username = req.body.username;
     var password = utils.md5(req.body.password + utils.MD5_SUFFIX);
-
     db.query(`SELECT * FROM user_list WHERE username='${username}'`, (err, data) => {
         if (err) {
             res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
@@ -263,6 +263,7 @@ server.use('/pushArticle', (req, res, next) => {
             console.log('准备添加文章');
             db.query(`INSERT INTO article_list (userId,mainTitle,tags,intro,date,col,columnId,content,render,original) VALUES ("${sid}" ,"${articleInfo.mainTitle}","${articleInfo.tags}","${articleInfo.intro}","${articleInfo.date}","${articleInfo.col}","${articleInfo.columnId}","${articleInfo.content}","${articleInfo.contentRender}","${articleInfo.original}")`, (err, data) => {
                 if (err) {
+                    console.log(err);
                     res.status(500).send({ ret_code: "001", ret_msg: "添加文章错误" }).end()
                 } else {
                     if (articleInfo.draftId > 0) {
@@ -274,11 +275,12 @@ server.use('/pushArticle', (req, res, next) => {
                             if (err) {
                                 res.status(500).send({ ret_code: "001", ret_msg: "删除草稿箱错误" }).end()
                             } else {
-                                console.log('添加文章完成');
+                                console.log('从草稿箱发表文章完成');
                                 res.status(200).send({ ret_code: "000", ret_msg: "发布成功，删除草稿箱成功" }).end()
                             }
                         })
                     } else {
+                        console.log('添加文章完成');
                         res.status(200).send({ ret_code: "000", ret_msg: "发布成功" }).end()
                     }
                 }
@@ -407,7 +409,7 @@ server.post('/uploadArticle', (req, res, next) => {
             var pathName = req.files[0].path
             var newName = pathName + extNmae;
             var tempname = pathName.substring(3) + extNmae;
-            var resultName = url.resolve('http://localhost:8090', tempname);
+            var resultName = url.resolve('http://127.0.0.1:8090', tempname);
             fs.rename(pathName, newName, function (err) {
                 if (err) {
                     res.status(500).send({ ret_code: "000", ret_msg: '上传失败' }).end()
@@ -503,6 +505,10 @@ server.use('/updateSelfInfo', (req, res, next) => {
 server.use('/api', require(__dirname + '/router/api.js')());
 server.use(express.static(__dirname + '/www'));
 
-server.listen(8090);
+process.on('uncaughtException', function (err) {
+    console.log(`${new Date().toLocaleString()}==捕捉错误==${err}`)
+})
+
+server.listen(8090)
 
 
