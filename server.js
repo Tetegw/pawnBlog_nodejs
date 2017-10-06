@@ -82,8 +82,8 @@ server.use('/logout', (req, res, next) => {
 
 //获取用户信息
 server.use('/initUserInfo', (req, res, next) => {
-    const sid = req.session['sid']
     const userIdPerfix = 24500
+    const sid = req.query.userId * 1 - userIdPerfix || req.session['sid']
     db.query(`SELECT * FROM user_list WHERE ID='${sid}'`, (err, data) => {
         if (err) {
             res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
