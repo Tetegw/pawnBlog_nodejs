@@ -60,7 +60,7 @@ server.use('/login', (req, res, next) => {
                 if (data[0].password === password) {
                     // 成功, 存session
                     req.session['sid'] = data[0].ID
-                    res.status(200).send({ ret_code: "000", ret_msg: "登陆成功" }).end()
+                    res.status(200).send({ ret_code: "000", ret_msg: "登陆成功", ret_avatar: data[0].avatar }).end()
                 } else {
                     res.status(200).send({ ret_code: "003", ret_msg: "密码错误" }).end()
                 }
