@@ -82,7 +82,8 @@ server.use('/logout', (req, res, next) => {
 
 //获取用户信息
 server.use('/initUserInfo', (req, res, next) => {
-    var sid = req.session['sid']
+    const sid = req.session['sid']
+    const userIdPerfix = 24500
     db.query(`SELECT * FROM user_list WHERE ID='${sid}'`, (err, data) => {
         if (err) {
             res.status(500).send({ ret_code: "001", ret_msg: "服务器错误" }).end()
@@ -90,10 +91,10 @@ server.use('/initUserInfo', (req, res, next) => {
             if (data.length === 0) {
                 res.status(200).send({ ret_code: "002", ret_msg: "用户不存在" }).end()
             } else {
-                delete data[0].ID
                 delete data[0].username
                 delete data[0].password
                 delete data[0].activate
+                data[0].ID += userIdPerfix
                 res.send({ ret_code: "000", ret_msg: "用户信息获取成功", data: data[0] }).end()
             }
         }
@@ -488,9 +489,11 @@ server.post('/uploadAvatar', (req, res, next) => {
 //更新个人信息
 server.use('/updateSelfInfo', (req, res, next) => {
     const sid = req.session['sid']
+    let showName = req.body.showName || `fepawn_${(Math.random() * 100000).toString().substring(0, 4)}`
+    let avatar = req.body.avatar || 'http://www.fepawn.com/upload/avatar/default.gif'
     // 新文章
     console.log('准备更新个人信息');
-    db.query(`UPDATE user_list SET showName="${req.body.showName}",singName="${req.body.shortInt}",avatar="${req.body.avatar}"  WHERE ID=${sid}`, (err, data) => {
+    db.query(`UPDATE user_list SET showName="${showName}",singName="${req.body.shortInt}",avatar="${avatar}"  WHERE ID=${sid}`, (err, data) => {
         if (err) {
             console.log(err);
             res.status(500).send({ ret_code: "001", ret_msg: "更新个人信息错误" }).end()
